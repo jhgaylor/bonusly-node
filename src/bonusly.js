@@ -82,81 +82,89 @@ function SendHTTPRequest (endpoint_options, data) {
   return def.promise;
 }
 
+// returns a callable that accepts the options provided at runtime
+// i guess this is basically currying.
+function MakeEndpoint (endpoint_options) {
+  // define the default values
+  var BASE_OPTIONS = {
+    required: [],
+    optional: [],
+    auth: true,
+    method: "GET"
+  };
+  // set the default values
+  endpoint_options = _.extend(BASE_OPTIONS, endpoint_options);
+
+  // create a function that when called will return the result of SendHTTPRequest with some parameters.
+  return function (opts) {
+    // merge the access_token in at runtime so it will reflect the most recently authenticated user
+    // by passing opts as the last parameter, if an access_token is specified in the options, the internal one isn't used.
+    opts = _.extend({access_token: api_key}, opts);
+    var promise = SendHTTPRequest(endpoint_options, opts);
+    // if this endpoint has a callback registered
+    if (endpoint_options.cb) {
+      promise.then(function (results) {
+        endpoint_options.cb(results.data, results.response);
+      });
+    }
+    return promise;
+  }
+};
+
+
 // Note: the scope of `api_key` is *very* important here.
 // it is used sort of like a private member variable.
 var Bonusly = function (api_key) {
-  // returns a callable that accepts the options provided at runtime
-  // i guess this is basically currying.
-  function MakeEndpoint (endpoint_options) {
-    // define the default values
-    var BASE_OPTIONS = {
-      required: [],
-      optional: [],
-      auth: true,
-      method: "GET"
-    };
-    // set the default values
-    endpoint_options = _.extend(BASE_OPTIONS, endpoint_options);
 
-    // create a function that when called will return the result of SendHTTPRequest with some parameters.
-    return function (opts) {
-      // merge the access_token in at runtime so it will reflect the most recently authenticated user
-      // by passing opts as the last parameter, if an access_token is specified in the options, the internal one isn't used.
-      opts = _.extend({access_token: api_key}, opts);
-      var promise = SendHTTPRequest(endpoint_options, opts);
-      // if this endpoint has a callback registered
-      if (endpoint_options.cb) {
-        promise.then(function (results) {
-          endpoint_options.cb(results.data, results.response);
-        });
-      }
-      return promise;
-    }
-  }
+};
+// Lets us define the structure of the calls while also creating
+//   the objects that handle the calls.
+// It would probably be possible to do this at runtime
+//   by iterating the keys of `Descriptions`.
+Bonusly.authenticate = {
+  session: MakeEndpoint(Descriptions['authenticate.session']),
+  oauth: MakeEndpoint(Descriptions['authenticate.oauth'])
+};
+Bonusly.bonuses = {
+  getAll: MakeEndpoint(Descriptions['bonuses.getAll']),
+  getOne: MakeEndpoint(Descriptions['bonuses.getOne']),
+  create: MakeEndpoint(Descriptions['bonuses.create'])
+};
+Bonusly.users = {
+  getAll: MakeEndpoint(Descriptions['users.getAll']),
+  getOne: MakeEndpoint(Descriptions['users.getOne']),
+  create: MakeEndpoint(Descriptions['users.create']),
+  update: MakeEndpoint(Descriptions['users.yodate']),
+  delete: MakeEndpoint(Descriptions['users.delete']),
+  getRedemptions: MakeEndpoint(Descriptions['users.redemptions.getAll'])
+};
+Bonusly.values = {
+  getAll: MakeEndpoint(Descriptions['values.getAll']),
+  getOne: MakeEndpoint(Descriptions['values.getOne'])
+};
+Bonusly.companies = {
+  show: MakeEndpoint(Descriptions['companies.show']),
+  update: MakeEndpoint(Descriptions['companies.update'])
+};
+Bonusly.leaderboards = {
+  getStandouts: MakeEndpoint(Descriptions['leaderboards.getStandouts'])
+};
+Bonusly.rewards = {
+  getAll: MakeEndpoint(Descriptions['rewards.getAll']),
+  getOne: MakeEndpoint(Descriptions['rewards.getOne']),
+  create: MakeEndpoint(Descriptions['rewards.create'])
+};
+Bonusly.redemptions = {
+  getOne: MakeEndpoint(Descriptions['redemptions.getOne'])
+};
 
-  // lets us define the structure of the calls while also creating the objects that handle the calls.
-  var API = {
-    getApiKey: function () {
-      return api_key;
-    },
-    authenticate: {
-      session: MakeEndpoint(Descriptions['authenticate.session']),
-      oauth: MakeEndpoint(Descriptions['authenticate.oauth'])
-    },
-    bonuses: {
-      getAll: MakeEndpoint(Descriptions['bonuses.getAll']),
-      getOne: MakeEndpoint(Descriptions['bonuses.getOne']),
-      create: MakeEndpoint(Descriptions['bonuses.create'])
-    },
-    users: {
-      getAll: MakeEndpoint(Descriptions['users.getAll']),
-      getOne: MakeEndpoint(Descriptions['users.getOne']),
-      create: MakeEndpoint(Descriptions['users.create']),
-      update: MakeEndpoint(Descriptions['users.yodate']),
-      delete: MakeEndpoint(Descriptions['users.delete']),
-      getRedemptions: MakeEndpoint(Descriptions['users.redemptions.getAll'])
-    },
-    values: {
-      getAll: MakeEndpoint(Descriptions['values.getAll']),
-      getOne: MakeEndpoint(Descriptions['values.getOne'])
-    },
-    companies: {
-      show: MakeEndpoint(Descriptions['companies.show']),
-      update: MakeEndpoint(Descriptions['companies.update'])
-    },
-    leaderboards: {
-      getStandouts: MakeEndpoint(Descriptions['leaderboards.getStandouts'])
-    },
-    rewards: {
-      getAll: MakeEndpoint(Descriptions['rewards.getAll']),
-      getOne: MakeEndpoint(Descriptions['rewards.getOne']),
-      create: MakeEndpoint(Descriptions['rewards.create'])
-    },
-    redemptions: {
-      getOne: MakeEndpoint(Descriptions['redemptions.getOne'])
-    }
-  }
-  return API;
+
+
+var APIBindings = {
+  getApiKey: function () {
+    return api_key;
+  },
+
 };
 
 module.exports = Bonusly;
