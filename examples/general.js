@@ -4,7 +4,7 @@ var Bonusly = require('../main');
 var API_KEY = process.env.BONUSLY_API_KEY;
 
 // create an api client with that key.
-var b = Bonusly(API_KEY);
+var b = new Bonusly(API_KEY);
 
 // Get all the bonuses for the current user (as determined by the api key)
 // Bonusly calls return a promise for the results.
