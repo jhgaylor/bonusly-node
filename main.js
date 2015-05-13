@@ -64,7 +64,7 @@ function SendHTTPRequest (endpoint_options, data) {
       return
     }
     var result_data = JSON.parse(body);
-    def.resolve(result_data);
+    def.resolve({data: result_data, response: res});
   });
   return def.promise;
 }
@@ -89,12 +89,27 @@ var Bonusly = function (api_key) {
     return function (opts) {
       // merge the access_token in at runtime so it will reflect the most recently authenticated user
       opts = _.extend(opts, {access_token: api_key});
-      return SendHTTPRequest(endpoint_options, opts);
+      var promise = SendHTTPRequest(endpoint_options, opts);
+      // if this call needs to update the api key
+      if (endpoint_options.auth === false) {
+        // this is an enpoint that is doing authentication
+        // store the results
+        // NOTE: the scope on api_key is the one from the closure.
+        promise.then(function (results) {
+          if (results.response.headers['x-bonusly-authentication-token']) {
+            api_key = results.response.headers['x-bonusly-authentication-token']
+          }
+        });
+      }
+      return promise;
     }
   }
 
   // lets us define the structure of the calls while also creating the objects that handle the calls.
   var Endpoints = {
+    getApiKey: function () {
+      return api_key;
+    },
     // TODO: how do i attach a callback that will modify api_key basically for free.
     authenticate: {
       session: MakeEndpoint({
@@ -239,10 +254,10 @@ var Bonusly = function (api_key) {
   return Endpoints;
 };
 
-
+module.exports = Bonusly
 
 // Usage: Returns promises for the data
-var b = Bonusly(process.env.BONUSLY_API_KEY || "29bdd0dd4b63be1fde85629b8c956ba4");
+// var b = Bonusly(process.env.BONUSLY_API_KEY || "29bdd0dd4b63be1fde85629b8c956ba4");
 // b.bonuses.getAll({}).then(function (data) {
 //   console.log("Got data", data);
 // })
