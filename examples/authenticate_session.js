@@ -2,13 +2,13 @@ var Bonusly = require('../main');
 
 // You will need the user's email address and password
 // in order to get their api key. This probably comes from the ui.
-var user_email = "jake@example.com";
-var user_password = "<password>";
+var user_email = process.env.BONUSLY_EMAIL;
+var user_password = process.env.BONUSLY_PASSWORD;
 
 // create an instance of the client with no API key set.
-// in fact, without the api key tracking, it wouldn't
-// even need to be instantiated.
-var b = Bonusly();
+// in fact, if the api key tracking isn't desired, it wouldn't
+// even need to be instantiated. `var b = Bonusly;`
+var b = new Bonusly();
 console.log("the api key when starting is ", b.getApiKey())
 // send the authentication request
 // it will begin tracking the api key automatically
