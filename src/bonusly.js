@@ -1,4 +1,3 @@
-
 // Makes extensive use of closures.
 // TODO: make it so that it will work as a static object or able to track auth
 // - the static version makes it easy to use if you already have an api key in memory.
@@ -13,6 +12,8 @@ var format = require("string-template");
 var request = require('request');
 // promises!
 var Q = require('q');
+// grab the descriptions
+var Descriptions = require('./descriptions');
 
 // The location of the API.
 var BASE_URL = "https://bonus.ly/api/v1/";
@@ -81,7 +82,7 @@ function SendHTTPRequest (endpoint_options, data) {
   return def.promise;
 }
 
-// Note: the scope of `api_key` is *very* important here. 
+// Note: the scope of `api_key` is *very* important here.
 // it is used sort of like a private member variable.
 var Bonusly = function (api_key) {
   // returns a callable that accepts the options provided at runtime
@@ -96,7 +97,7 @@ var Bonusly = function (api_key) {
     };
     // set the default values
     endpoint_options = _.extend(BASE_OPTIONS, endpoint_options);
-    
+
     // create a function that when called will return the result of SendHTTPRequest with some parameters.
     return function (opts) {
       // merge the access_token in at runtime so it will reflect the most recently authenticated user
@@ -114,163 +115,48 @@ var Bonusly = function (api_key) {
   }
 
   // lets us define the structure of the calls while also creating the objects that handle the calls.
-  var Endpoints = {
+  var API = {
     getApiKey: function () {
       return api_key;
     },
     authenticate: {
-      session: MakeEndpoint({
-        required: ["email", "password"],
-        // optional: [],
-        method: "POST",
-        url: "sessions",
-        cb: function (data, response) {
-          if (response.headers['x-bonusly-authentication-token']) {
-            // NOTE: the scope on api_key is the one from the closure.
-            api_key = response.headers['x-bonusly-authentication-token']
-          }
-        },
-        auth: false // default - true
-      }),
-      oauth: MakeEndpoint({
-        required: ["provider", "token"],
-        // optional: [],
-        method: "POST",
-        url: "sessions/oauth",
-        cb: function (data, response) {
-          if (response.headers['x-bonusly-authentication-token']) {
-            // NOTE: the scope on api_key is the one from the closure.
-            api_key = response.headers['x-bonusly-authentication-token']
-          }
-        },
-        auth: false // default - true
-      })
+      session: MakeEndpoint(Descriptions['authenticate.session']),
+      oauth: MakeEndpoint(Descriptions['authenticate.oauth'])
     },
     bonuses: {
-      getAll: MakeEndpoint({
-        required: [],
-        // optional: ["limit", "start_time", "end_time", "non_zero", "top_level", "giver_email", "receiver_email", "user_email", "hashtag"],
-        method: "GET",
-        url: "bonuses"
-      }),
-      getOne: MakeEndpoint({
-        required: ["id"],
-        // optional: [],
-        method: "GET",
-        url: "bonuses/{id}"
-      }),
-      create: MakeEndpoint({
-        required: ["receiver_email", "reason", "amount"],
-        // optional: ["giver_email"],
-        method: "POST",
-        url: "bonuses"
-      })
+      getAll: MakeEndpoint(Descriptions['bonuses.getAll']),
+      getOne: MakeEndpoint(Descriptions['bonuses.getOne']),
+      create: MakeEndpoint(Descriptions['bonuses.create'])
     },
     users: {
-      getAll: MakeEndpoint({
-        required: [],
-        // optional: [],
-        method: "GET",
-        url: "users"
-      }),
-      getOne: MakeEndpoint({
-        required: ["id"],
-        // optional: [],
-        method: "GET",
-        url: "users/{id}"
-      }),
-      create: MakeEndpoint({
-        required: ["email", "first_name", "last_name"],
-        // optional: ["custom_properties", "user_mode", "budget_boost", "external_unique_id"],
-        method: "POST",
-        url: "users"
-      }),
-      update: MakeEndpoint({
-        required: ["id"],
-        // optional: ["email", "first_name", "last_name", "custom_properties", "user_mode", "budget_boost", "external_unique_id"],
-        method: "PUT",
-        url: "users/{id}"
-      }),
-      delete: MakeEndpoint({
-        required: ["id"],
-        // optional: ["custom_properties", "user_mode", "budget_boost", "external_unique_id"],
-        method: "DELETE",
-        url: "users/{id}"
-      }),
-      getRedemptions: MakeEndpoint({
-        required: ["id"],
-        // optional: [],
-        method: "GET",
-        url: "users/{id}/redemptions"
-      })
+      getAll: MakeEndpoint(Descriptions['users.getAll']),
+      getOne: MakeEndpoint(Descriptions['users.getOne']),
+      create: MakeEndpoint(Descriptions['users.create']),
+      update: MakeEndpoint(Descriptions['users.yodate']),
+      delete: MakeEndpoint(Descriptions['users.delete']),
+      getRedemptions: MakeEndpoint(Descriptions['users.redemptions.getAll'])
     },
     values: {
-      getAll: MakeEndpoint({
-        required: [],
-        // optional: [],
-        method: "GET",
-        url: "values"
-      }),
-      getOne: MakeEndpoint({
-        required: ["id"],
-        // optional: [],
-        method: "GET",
-        url: "values/{id}"
-      })
+      getAll: MakeEndpoint(Descriptions['values.getAll']),
+      getOne: MakeEndpoint(Descriptions['values.getOne'])
     },
     companies: {
-      show: MakeEndpoint({
-        required: [],
-        // optional: [],
-        method: "GET",
-        url: "companies/show"
-      }),
-      update: MakeEndpoint({
-        required: ["id"],
-        // TODO: how to do * here
-        // optional: ["name", "* array of custom_user_properties"],
-        method: "PUT",
-        url: "companies/update"
-      })
+      show: MakeEndpoint(Descriptions['companies.show']),
+      update: MakeEndpoint(Descriptions['companies.update'])
     },
     leaderboards: {
-      getStandouts: MakeEndpoint({
-        required: [],
-        // optional: ["role", "value", "custom_property_name", "custom_property_value"],
-        method: "GET",
-        url: "analytics/standouts"
-      })
+      getStandouts: MakeEndpoint(Descriptions['leaderboards.getStandouts'])
     },
     rewards: {
-      getAll: MakeEndpoint({
-        required: [],
-        // optional: ["catalog_country", "request_country"],
-        method: "GET",
-        url: "rewards"
-      }),
-      getOne: MakeEndpoint({
-        required: ["id"],
-        // optional: [],
-        method: "GET",
-        url: "rewards/{id}"
-      }),
-      create: MakeEndpoint({
-        required: ["denomination_id", "user_id", "access_token"],
-        // optional: [],
-        method: "POST",
-        url: "rewards"
-      })
+      getAll: MakeEndpoint(Descriptions['rewards.getAll']),
+      getOne: MakeEndpoint(Descriptions['rewards.getOne']),
+      create: MakeEndpoint(Descriptions['rewards.create'])
     },
     redemptions: {
-      getOne: MakeEndpoint({
-        required: ["id"],
-        // optional: [],
-        method: "GET",
-        url: "redemptions/{id}"
-      })
+      getOne: MakeEndpoint(Descriptions['redemptions.getOne'])
     }
   }
-  return Endpoints;
+  return API;
 };
 
 module.exports = Bonusly;
