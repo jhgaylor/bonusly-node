@@ -1,6 +1,6 @@
 // About: A library for making requests to the Bonus.ly HTTP api.
 // Makes extensive use of closures.
-
+// TODO: make it so that it will work as a static object or able to track auth
 // a library of helper functions mostly related to working with collections
 var _ = require('underscore');
 // gives us a tool for replacing named and positional arguments in a string.
@@ -254,19 +254,4 @@ var Bonusly = function (api_key) {
   return Endpoints;
 };
 
-module.exports = Bonusly
-
-// Usage: Returns promises for the data
-// var b = Bonusly(process.env.BONUSLY_API_KEY || "29bdd0dd4b63be1fde85629b8c956ba4");
-// b.bonuses.getAll({}).then(function (data) {
-//   console.log("Got data", data);
-// })
-// b.rewards.getAll({}).then(function (d) {
-//   console.log("got data", d)
-// }).catch(function(e) {
-//   console.log("err", e, e.stack);
-// });
-// or
-// var b = Bonusly();
-// b.authenticate.session({...});
-// b.bonuses.getAll();
+module.exports = Bonusly;
