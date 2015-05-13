@@ -97,9 +97,6 @@ function MakeEndpoint (endpoint_options) {
 
   // create a function that when called will return the result of SendHTTPRequest with some parameters.
   return function (opts) {
-    // merge the access_token in at runtime so it will reflect the most recently authenticated user
-    // by passing opts as the last parameter, if an access_token is specified in the options, the internal one isn't used.
-    opts = _.extend({access_token: api_key}, opts);
     var promise = SendHTTPRequest(endpoint_options, opts);
     // if this endpoint has a callback registered
     if (endpoint_options.cb) {
@@ -111,12 +108,92 @@ function MakeEndpoint (endpoint_options) {
   }
 };
 
-
-// Note: the scope of `api_key` is *very* important here.
-// it is used sort of like a private member variable.
+// constructor - usage: var b = new Bonusly(...);
 var Bonusly = function (api_key) {
+  var self = this;
+  self.api_key = api_key || null;
 
+  // adds the api key to the options on every call.
+  function _wrapEndpoint (endpoint) {
+    return function (opts) {
+      opts.access_token = self.api_key
+      return endpoint(opts);
+    }
+  }
+
+  var description = Descriptions['authenticate.session'];
+  setApiKeyCb = function (data, response) {
+    if (response.headers['x-bonusly-authentication-token']) {
+      // NOTE: the scope on api_key is the one from the closure.
+      self.setApiKey(response.headers['x-bonusly-authentication-token']);
+    }
+  };
+
+  var sessionDescription = Descriptions['authenticate.session'];
+  sessionDescription.cb = setApiKeyCb;
+
+  var oauthDescription = Descriptions['authenticate.oauth'];
+  oauthDescription.cb = setApiKeyCb;
+
+
+  // register callbacks on the descriptions before creating the endpoint
+  self.endpoints = {
+    authenticate: {
+      session: MakeEndpoint(sessionDescription),
+      oauth: MakeEndpoint(oauthDescription)
+    }
+  }
+  // wrap all the static methods with a version that will keep up with the api key.
+  self.authenticate = {
+    session: _wrapEndpoint(self.endpoints.authenticate.session),
+    oauth: _wrapEndpoint(self.endpoints.authenticate.oauth)
+  };
+  self.bonuses = {
+    getAll: _wrapEndpoint(Bonusly.bonuses.getAll),
+    getOne: _wrapEndpoint(Bonusly.bonuses.getOne),
+    create: _wrapEndpoint(Bonusly.bonuses.create)
+  };
+  self.users = {
+    getAll: _wrapEndpoint(Bonusly.users.getAll),
+    getOne: _wrapEndpoint(Bonusly.users.getOne),
+    create: _wrapEndpoint(Bonusly.users.create),
+    update: _wrapEndpoint(Bonusly.users.update),
+    delete: _wrapEndpoint(Bonusly.users.delete),
+    getRedemptions: _wrapEndpoint(Bonusly.users.getRedemptions)
+  };
+  self.values = {
+    getAll: _wrapEndpoint(Bonusly.values.getAll),
+    getOne: _wrapEndpoint(Bonusly.values.getOne)
+  };
+  self.companies = {
+    show: _wrapEndpoint(Bonusly.companies.show),
+    update: _wrapEndpoint(Bonusly.companies.update)
+  };
+  self.leaderboards = {
+    getStandouts: _wrapEndpoint(Bonusly.leaderboards.getStandouts)
+  };
+  self.rewards = {
+    getAll: _wrapEndpoint(Bonusly.rewards.getAll),
+    getOne: _wrapEndpoint(Bonusly.rewards.getOne),
+    create: _wrapEndpoint(Bonusly.rewards.create)
+  };
+  self.redemptions = {
+    getOne: _wrapEndpoint(Bonusly.redemptions.getOne)
+  };
+
+  return self;
 };
+
+// kind of like public instance methods.
+Bonusly.prototype.getApiKey = function () {
+  return this.api_key;
+};
+
+Bonusly.prototype.setApiKey = function (api_key) {
+  this.api_key = api_key;
+};
+
+
 // Lets us define the structure of the calls while also creating
 //   the objects that handle the calls.
 // It would probably be possible to do this at runtime
@@ -156,15 +233,6 @@ Bonusly.rewards = {
 };
 Bonusly.redemptions = {
   getOne: MakeEndpoint(Descriptions['redemptions.getOne'])
-};
-
-
-
-var APIBindings = {
-  getApiKey: function () {
-    return api_key;
-  },
-
 };
 
 module.exports = Bonusly;
