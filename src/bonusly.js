@@ -24,8 +24,8 @@ function trimSlashes (str) {
 // Note: it doesn't matter if url_partial has trailing `/`'s.
 // Note: grab :params from data and copy them to the url. ie read the url and look for things to replace
 // and then replace them. pattern is /bonuses/{id} for a parameter `id`
-// Combines `url_partial` with the base url (TODO: while removing duplicate /'s)
 function buildUrl (url_partial, data) {
+  url_partial = trimSlashes(url_partial);
   var expanded_url_partial = format(url_partial, data);
   var full_url = BASE_URL + expanded_url_partial;
   return full_url;
