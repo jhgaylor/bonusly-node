@@ -1,6 +1,10 @@
 // About: A library for making requests to the Bonus.ly HTTP api.
 // Makes extensive use of closures.
 // TODO: make it so that it will work as a static object or able to track auth
+// - the static version makes it easy to use if you already have an api key in memory.
+// - the instantiated version makes it fairly trivial to use the library to make an app
+//   that doesn't have to worry about the api key concept at all by using a login UI.
+
 // a library of helper functions mostly related to working with collections
 var _ = require('underscore');
 // gives us a tool for replacing named and positional arguments in a string.
@@ -31,6 +35,7 @@ function buildUrl (url_partial, data) {
   return full_url;
 }
 
+// TODO: revisit this signature. maybe positional arguments are better? depends on the new abstration
 // returns a promise for the result of the http api call
 function SendHTTPRequest (endpoint_options, data) {
   var method = endpoint_options.method;
@@ -62,7 +67,7 @@ function SendHTTPRequest (endpoint_options, data) {
       request_options.form = data;
       break;
   }
-  // todo: return a promise for the data as an object
+  // todo: re-evaluate this resolution value
   console.log(request_options);
   var def = Q.defer();
   request(request_options, function (err, res, body) {
@@ -95,7 +100,8 @@ var Bonusly = function (api_key) {
     // create a function that when called will return the result of SendHTTPRequest with some parameters.
     return function (opts) {
       // merge the access_token in at runtime so it will reflect the most recently authenticated user
-      opts = _.extend(opts, {access_token: api_key});
+      // by passing opts as the last parameter, if an access_token is specified in the options, the internal one isn't used.
+      opts = _.extend({access_token: api_key}, opts);
       var promise = SendHTTPRequest(endpoint_options, opts);
       // if this endpoint has a callback registered
       if (endpoint_options.cb) {
@@ -112,7 +118,6 @@ var Bonusly = function (api_key) {
     getApiKey: function () {
       return api_key;
     },
-    // TODO: how do i attach a callback that will modify api_key basically for free.
     authenticate: {
       session: MakeEndpoint({
         required: ["email", "password"],
