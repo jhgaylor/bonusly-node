@@ -1,4 +1,17 @@
-// About: A library for making requests to the Bonus.ly HTTP api.
+/*
+  About: A library for making requests to the Bonus.ly HTTP api.
+  How it works: most of the code falls into one of three categories.
+    1) Descriptions of individual interactions with the HTTP api. 
+       This includes things like describing the URL and required 
+       parameters as well as registering a callback when the 
+       response is received.
+    2) A "description processer" that takes the provided descriptions
+       and returns a callable that when called with options will return a 
+       promise for data from the API.
+    3) Creating callables from the descriptions and binding them to the
+       public api of the module
+*/
+
 // Makes extensive use of closures.
 // TODO: make it so that it will work as a static object or able to track auth
 // - the static version makes it easy to use if you already have an api key in memory.
