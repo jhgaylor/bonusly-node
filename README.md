@@ -19,3 +19,7 @@ most of the code falls into one of three categories.
 ## Why I used this pattern
 
 The idea was to treat the HTTP api as a set of calls that could be described using a few common parameters. I was trying to get as close as I could to "generating" code. (I should learn a lisp!) Adding new endpoints becomes as simple as writing a POJO. This wouldn't work if the HTTP API didn't have internal consistency. I bet there is a higher abstraction for this that would allow it to be more easily used to build a client for a new API.
+
+By describing the required parameters, we can give feedback to the developer without waiting for a round trip.  This comes at the expense of having to update the client library any time the http api changes. Depending on how "frozen" the api is, this may or may not be a good trade off. I built this to easily allow that feature to be removed.
+
+Defining optional parameters allows for the library to log warnings if an unexpected parameter is found. Likewise, this can easily be removed.
