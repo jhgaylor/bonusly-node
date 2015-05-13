@@ -13,8 +13,15 @@ var Q = require('q');
 // The location of the API.
 var BASE_URL = "https://bonus.ly/api/v1/";
 
-// Note: url_partial should *NOT* start with a slash.
-// TODO: use the url library to combine them smartly.
+// removes trailing forward slashes `/` for combining url partials
+function trimSlashes (str) {
+  // `^\/` - "does it start with a /"
+  // `\/$` - "does it end with a /"
+  return str.replace(/^\/|\/$/g, "");
+}
+
+// Combines `url_partial` with the base url and inflates the url template with `data`
+// Note: it doesn't matter if url_partial has trailing `/`'s.
 // Note: grab :params from data and copy them to the url. ie read the url and look for things to replace
 // and then replace them. pattern is /bonuses/{id} for a parameter `id`
 // Combines `url_partial` with the base url (TODO: while removing duplicate /'s)
@@ -90,15 +97,10 @@ var Bonusly = function (api_key) {
       // merge the access_token in at runtime so it will reflect the most recently authenticated user
       opts = _.extend(opts, {access_token: api_key});
       var promise = SendHTTPRequest(endpoint_options, opts);
-      // if this call needs to update the api key
-      if (endpoint_options.auth === false) {
-        // this is an enpoint that is doing authentication
-        // store the results
-        // NOTE: the scope on api_key is the one from the closure.
+      // if this endpoint has a callback registered
+      if (endpoint_options.cb) {
         promise.then(function (results) {
-          if (results.response.headers['x-bonusly-authentication-token']) {
-            api_key = results.response.headers['x-bonusly-authentication-token']
-          }
+          endpoint_options.cb(results.data, results.response);
         });
       }
       return promise;
@@ -117,6 +119,12 @@ var Bonusly = function (api_key) {
         // optional: [],
         method: "POST",
         url: "sessions",
+        cb: function (data, response) {
+          if (response.headers['x-bonusly-authentication-token']) {
+            // NOTE: the scope on api_key is the one from the closure.
+            api_key = response.headers['x-bonusly-authentication-token']
+          }
+        },
         auth: false // default - true
       }),
       oauth: MakeEndpoint({
@@ -124,6 +132,12 @@ var Bonusly = function (api_key) {
         // optional: [],
         method: "POST",
         url: "sessions/oauth",
+        cb: function (data, response) {
+          if (response.headers['x-bonusly-authentication-token']) {
+            // NOTE: the scope on api_key is the one from the closure.
+            api_key = response.headers['x-bonusly-authentication-token']
+          }
+        },
         auth: false // default - true
       })
     },
