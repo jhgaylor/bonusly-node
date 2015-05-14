@@ -114,7 +114,7 @@ var Bonusly = function (api_key) {
   self.api_key = api_key || null;
 
   // adds the api key to the options on every call.
-  function _wrapEndpoint (endpoint) {
+  function _wrapEndpointWithCurrentApiKey (endpoint) {
     return function (opts) {
       opts.access_token = self.api_key
       return endpoint(opts);
@@ -129,14 +129,15 @@ var Bonusly = function (api_key) {
     }
   };
 
+  // register callbacks on the descriptions before creating the endpoint
   var sessionDescription = Descriptions['authenticate.session'];
   sessionDescription.cb = setApiKeyCb;
 
   var oauthDescription = Descriptions['authenticate.oauth'];
   oauthDescription.cb = setApiKeyCb;
 
-
-  // register callbacks on the descriptions before creating the endpoint
+  // make endpoints from the prepared descriptions. these can't just be the static
+  // endpoints because they need something mixed in. In this case, it's a callback.
   self.endpoints = {
     authenticate: {
       session: MakeEndpoint(sessionDescription),
@@ -145,40 +146,40 @@ var Bonusly = function (api_key) {
   }
   // wrap all the static methods with a version that will keep up with the api key.
   self.authenticate = {
-    session: _wrapEndpoint(self.endpoints.authenticate.session),
-    oauth: _wrapEndpoint(self.endpoints.authenticate.oauth)
+    session: _wrapEndpointWithCurrentApiKey(self.endpoints.authenticate.session),
+    oauth: _wrapEndpointWithCurrentApiKey(self.endpoints.authenticate.oauth)
   };
   self.bonuses = {
-    getAll: _wrapEndpoint(Bonusly.bonuses.getAll),
-    getOne: _wrapEndpoint(Bonusly.bonuses.getOne),
-    create: _wrapEndpoint(Bonusly.bonuses.create)
+    getAll: _wrapEndpointWithCurrentApiKey(Bonusly.bonuses.getAll),
+    getOne: _wrapEndpointWithCurrentApiKey(Bonusly.bonuses.getOne),
+    create: _wrapEndpointWithCurrentApiKey(Bonusly.bonuses.create)
   };
   self.users = {
-    getAll: _wrapEndpoint(Bonusly.users.getAll),
-    getOne: _wrapEndpoint(Bonusly.users.getOne),
-    create: _wrapEndpoint(Bonusly.users.create),
-    update: _wrapEndpoint(Bonusly.users.update),
-    delete: _wrapEndpoint(Bonusly.users.delete),
-    getRedemptions: _wrapEndpoint(Bonusly.users.getRedemptions)
+    getAll: _wrapEndpointWithCurrentApiKey(Bonusly.users.getAll),
+    getOne: _wrapEndpointWithCurrentApiKey(Bonusly.users.getOne),
+    create: _wrapEndpointWithCurrentApiKey(Bonusly.users.create),
+    update: _wrapEndpointWithCurrentApiKey(Bonusly.users.update),
+    delete: _wrapEndpointWithCurrentApiKey(Bonusly.users.delete),
+    getRedemptions: _wrapEndpointWithCurrentApiKey(Bonusly.users.getRedemptions)
   };
   self.values = {
-    getAll: _wrapEndpoint(Bonusly.values.getAll),
-    getOne: _wrapEndpoint(Bonusly.values.getOne)
+    getAll: _wrapEndpointWithCurrentApiKey(Bonusly.values.getAll),
+    getOne: _wrapEndpointWithCurrentApiKey(Bonusly.values.getOne)
   };
   self.companies = {
-    show: _wrapEndpoint(Bonusly.companies.show),
-    update: _wrapEndpoint(Bonusly.companies.update)
+    show: _wrapEndpointWithCurrentApiKey(Bonusly.companies.show),
+    update: _wrapEndpointWithCurrentApiKey(Bonusly.companies.update)
   };
   self.leaderboards = {
-    getStandouts: _wrapEndpoint(Bonusly.leaderboards.getStandouts)
+    getStandouts: _wrapEndpointWithCurrentApiKey(Bonusly.leaderboards.getStandouts)
   };
   self.rewards = {
-    getAll: _wrapEndpoint(Bonusly.rewards.getAll),
-    getOne: _wrapEndpoint(Bonusly.rewards.getOne),
-    create: _wrapEndpoint(Bonusly.rewards.create)
+    getAll: _wrapEndpointWithCurrentApiKey(Bonusly.rewards.getAll),
+    getOne: _wrapEndpointWithCurrentApiKey(Bonusly.rewards.getOne),
+    create: _wrapEndpointWithCurrentApiKey(Bonusly.rewards.create)
   };
   self.redemptions = {
-    getOne: _wrapEndpoint(Bonusly.redemptions.getOne)
+    getOne: _wrapEndpointWithCurrentApiKey(Bonusly.redemptions.getOne)
   };
 
   return self;
