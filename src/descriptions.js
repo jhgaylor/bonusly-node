@@ -5,26 +5,14 @@ module.exports = {
     // optional: [],
     method: "POST",
     url: "sessions",
-    cb: function (data, response) {
-      if (response.headers['x-bonusly-authentication-token']) {
-        // NOTE: the scope on api_key is the one from the closure.
-        api_key = response.headers['x-bonusly-authentication-token']
-      }
-    },
-    auth: false // default - true
+    auth: false
   },
   'authenticate.oauth': {
     required: ["provider", "token"],
     // optional: [],
     method: "POST",
     url: "sessions/oauth",
-    cb: function (data, response) {
-      if (response.headers['x-bonusly-authentication-token']) {
-        // NOTE: the scope on api_key is the one from the closure.
-        api_key = response.headers['x-bonusly-authentication-token']
-      }
-    },
-    auth: false // default - true
+    auth: false
   },
 	'bonuses.getAll': {
     required: [],
