@@ -1,8 +1,4 @@
 // Makes extensive use of closures.
-// TODO: make it so that it will work as a static object or able to track auth
-// - the static version makes it easy to use if you already have an api key in memory.
-// - the instantiated version makes it fairly trivial to use the library to make an app
-//   that doesn't have to worry about the api key concept at all by using a login UI.
 
 // a library of helper functions mostly related to working with collections
 var _ = require('underscore');
